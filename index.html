@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>HEIC Converter</title>
   <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/marked@9/marked.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/exifreader/dist/exif-reader.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jszip/dist/jszip.min.js"></script>
@@ -17,5 +18,270 @@
   <div id="modal-overlay"><div id="modal"></div></div>
   <div id="toast-container"></div>
   <script src="app.js"></script>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       Documentation content — read by showHelpModal() in app.js.
+       Raw Markdown; script type prevents execution.
+       Do not include the literal string </script inside these blocks.
+       ══════════════════════════════════════════════════════════ -->
+
+  <script type="text/x-markdown" id="doc-readme">
+# HEIC Converter — User Guide
+
+## How to Run
+
+1. Open `index.html` in any modern browser (Chrome, Edge, Firefox, Safari)
+2. An internet connection is required on first load (conversion libraries are loaded from CDN)
+3. No installation, build step, or sign-in needed — everything runs locally in your browser
+
+---
+
+## Convert Page
+
+### Adding Files
+
+- **Drag & drop** `.heic` / `.heif` files, or an entire folder, onto the drop zone
+- **Browse Files** — opens a file picker for individual HEIC files
+- **Browse Folder** — opens a folder picker; all HEIC files inside (including subfolders) are added automatically
+- Non-HEIC files are silently skipped with a count shown in a notification
+
+### Output Format
+
+| Format | Best for |
+|---|---|
+| **JPEG** | Photos, general use — smaller files, adjustable quality |
+| **PNG** | Screenshots, graphics — lossless, larger files |
+
+JPEG quality (1–100): higher = better image, larger file. 80–90 is a good default for photos.
+
+### Naming Convention
+
+**Custom Prefix** — type a prefix; files are numbered automatically:
+- Prefix `vacation_2024` → `vacation_2024_001.jpg`, `vacation_2024_002.jpg`, …
+- Leave blank to use `converted_001.jpg`, etc.
+
+**Metadata Template** — build a filename from tokens pulled from each image's EXIF data:
+- Example: `{date}_{model}` → `2024-07-04_iPhone-15-Pro.jpg`
+- Click any token chip to insert it at the cursor in the template field
+- Unresolvable tokens (missing metadata) are silently removed from the name
+- Use the **Metadata Inspector** tab to see which fields your files actually contain
+
+Available tokens:
+
+| Token | Value |
+|---|---|
+| `{filename}` | Original filename (no extension) |
+| `{index}` | Auto-number: 001, 002, … |
+| `{date}` | Photo date: YYYY-MM-DD |
+| `{time}` | Photo time: HH-MM-SS |
+| `{datetime}` | Date + time: YYYYMMDD_HHMMSS |
+| `{year}` | Year: YYYY |
+| `{month}` | Month: MM |
+| `{day}` | Day: DD |
+| `{make}` | Camera make (e.g. Apple) |
+| `{model}` | Camera model (e.g. iPhone-15-Pro) |
+
+### Output Location
+
+- **Download** (default) — click **↓ Save File** for single files, or **↓ Download All as ZIP** for bulk. Works in all browsers.
+- **Direct folder saving** (Chrome / Edge only) — click **Select Output Folder** to pick a destination. Each file is written there automatically as it finishes converting.
+
+### Converting
+
+1. Add files to the queue — they appear in the list below the settings
+2. Set format, quality, and naming convention
+3. Click **Convert N Files**
+4. Watch per-file status in the queue: ○ ready → ⟳ converting → ✓ done (or ✗ error)
+5. Download files individually or all at once as a ZIP
+
+---
+
+## Metadata Inspector
+
+Drop or browse any image (HEIC, JPEG, PNG, TIFF) to explore all embedded data:
+
+- **EXIF** — capture date/time, camera make and model, GPS location, lens, exposure
+- **IPTC** — captions, keywords, copyright info
+- **XMP** — extended metadata written by editing software
+- **File** — basic file-level information
+
+Fields that map to naming tokens show clickable chips (e.g. `{date}`, `{make}`) — click to copy, then paste into the Metadata Template on the Convert page.
+
+---
+
+## Privacy
+
+All conversion and metadata reading happens **entirely inside your browser**. No files are ever uploaded to any server.
+
+---
+
+## Tips
+
+- Run Metadata Inspector on a sample file first to discover which EXIF fields are present before configuring your naming template
+- For large batches the progress bar shows overall status; individual file status is shown per row
+- If a file shows an error, hover its red message for details — it may not be a valid HEIC despite the extension
+- To re-convert with different settings: click **Clear all**, re-add files, adjust settings, and convert again
+  </script>
+
+  <script type="text/x-markdown" id="doc-claude">
+# HEIC Converter — Developer Guide
+
+A self-contained single-page app. No framework, no build step, no npm. Five files: `index.html`, `styles.css`, `app.js`, `README.md`, `CLAUDE.md`. Open `index.html` in any browser. Libraries loaded from CDN (internet required).
+
+---
+
+## File Map
+
+| File | Purpose |
+|---|---|
+| `index.html` | Shell. Loads CDN scripts, `styles.css`, `app.js`. Contains `#app`, `#sidebar`, `#main`, `#modal-overlay`, `#toast-container`. Embeds doc Markdown in `script[type="text/x-markdown"]` tags for the help modal. |
+| `styles.css` | Full design system. CSS variables in `:root`. No external dependencies. |
+| `app.js` | Everything — state, all page renders, conversion engine, EXIF reading, download logic, drag-and-drop, naming, navigation. |
+| `README.md` | End-user instructions (Markdown, mirrors `#doc-readme`). |
+| `CLAUDE.md` | This file — codebase guide for Claude (mirrors `#doc-claude`). |
+
+---
+
+## CDN Libraries
+
+| Library | Global | Purpose |
+|---|---|---|
+| `marked@9` | `marked` | Markdown rendering for help modal |
+| `heic2any@0.0.4` | `heic2any` | HEIC → JPEG / PNG conversion |
+| `exifreader` (latest) | `ExifReader` | EXIF / IPTC / XMP metadata parsing |
+| `jszip` (latest) | `JSZip` | Bulk ZIP download |
+
+---
+
+## Architecture
+
+Single-page app with manual routing. Pages are rendered by functions that return HTML strings assigned to `document.getElementById('main').innerHTML`.
+
+### State
+
+```js
+const state = {
+  page: 'converter',
+  params: {},
+  // Conversion settings
+  fmt: 'jpeg',            // 'jpeg' | 'png'
+  quality: 85,            // 1-100 (JPEG only)
+  namingMode: 'custom',   // 'custom' | 'metadata'
+  customPrefix: '',
+  metaTpl: '{date}_{filename}',
+  outputDirHandle: null,  // FileSystemDirectoryHandle | null
+  // File queue
+  files: [],              // FileEntry[]
+  converting: false,
+  convDone: 0,
+  convTotal: 0,
+  // Metadata inspector
+  metaFile: null,
+  metaTags: null,
+  metaLoading: false,
+};
+```
+
+### FileEntry shape
+
+```js
+{
+  id,           // uuid string
+  file,         // File object
+  status,       // 'ready' | 'converting' | 'done' | 'error'
+  exif,         // ExifReader expanded result | null
+  outputName,   // string — set before conversion starts
+  outputBlob,   // Blob | null
+  error,        // string | null
+}
+```
+
+### Navigation
+
+```js
+navigate(page, params = {})
+```
+
+Sets `state.page`, updates sidebar active class, calls the render function for that page, sets `#main.innerHTML`. Two pages: `converter` and `metadata`.
+
+---
+
+## Key Functions
+
+### Conversion
+
+- `startConversion()` — pre-computes all output names, then processes files sequentially with `heic2any`. Updates `entry.status` and calls `refreshQueue()` after each file. If `state.outputDirHandle` is set, saves each done file to the folder via `saveEntryToFolder(entry)`.
+- `computeOutputName(entry, index, total)` — pure function, returns filename string from current settings and (optionally) `entry.exif`. Handles both naming modes, sanitises output.
+- `getNamingPreview()` — calls `computeOutputName` with dummy data for the live preview label.
+
+### EXIF
+
+- `loadExifForEntry(entry)` — async, reads the file as ArrayBuffer and calls `ExifReader.load(ab, { expanded: true })`. Result stored in `entry.exif`. Calls `refreshQueue()` when done so naming previews update.
+- `readExif(file)` — low-level wrapper around ExifReader; returns null on failure.
+
+### Download / Save
+
+- `triggerDownload(blob, filename)` — creates an `<a>` with an object URL and clicks it.
+- `downloadAllAsZip()` — uses JSZip to bundle all `done` entries; falls back to individual downloads if JSZip is missing.
+- `selectOutputFolder()` — calls `window.showDirectoryPicker()` (Chrome/Edge only). Stores handle in `state.outputDirHandle`.
+- `saveEntryToFolder(entry)` — writes a done entry's blob to the selected folder via File System Access API.
+
+### Drag & Drop
+
+- `getFilesFromEntries(entries)` — recursively walks `FileSystemEntry` objects (including directories) using `createReader().readEntries()` in a loop to handle batches > 100 entries.
+- `onDrop(e)` — prefers `webkitGetAsEntry` entries for folder support; falls back to `e.dataTransfer.files`.
+
+### UI Helpers
+
+- `refreshQueue()` — updates `#file-queue` innerHTML with `renderQueue()`. Safe to call when not on the converter page (no-op if element is absent).
+- `refreshOutputLocation()` — updates `#output-location-body` innerHTML.
+- `refreshNamingPreview()` — updates `#naming-preview` text.
+- `refreshMeta()` — updates `#meta-results` innerHTML with `renderMetaResults()`.
+
+### Help Modal
+
+- `showHelpModal(tab)` — opens a wide modal (`modal-wide` class, 760 px) with two tabs. Content is read from `script[type="text/x-markdown"]` elements (`#doc-readme`, `#doc-claude`) and rendered with `marked.parse()`. Falls back to `<pre>` if marked is unavailable.
+- `switchHelpTab(tab)` — toggles `#help-readme` / `#help-claude` visibility and updates `.active` on tab buttons.
+- `hideModal()` — removes `open` from `#modal-overlay` **and** removes `modal-wide` from `#modal`.
+
+---
+
+## UI Patterns
+
+### Modals
+
+`showConfirm(title, msg, onConfirm, confirmLabel)` — destructive action confirm dialog.
+
+`hideModal()` — removes `open` class and `modal-wide`. Also triggered by clicking the overlay backdrop.
+
+### Toasts
+
+`showToast(msg, type)` — type is `''` (dark), `'success'` (green), or `'error'` (red). Auto-removes after 3.5 s.
+
+### Partial re-renders
+
+Pages are rendered in full on `navigate()`. During active conversion, only `#file-queue` is updated via `refreshQueue()` to avoid losing form input state. Similarly `refreshOutputLocation()` and `refreshNamingPreview()` update only their target elements.
+
+### HTML Escaping
+
+`esc(str)` escapes `& < > "` in all user-supplied strings interpolated into HTML templates. Use it everywhere.
+
+---
+
+## Adding a New Page
+
+1. Write a `renderFoo()` function returning an HTML string.
+2. Add a `case 'foo':` in `navigate()`.
+3. Add a nav item to the `nav` array in `buildSidebar()`.
+
+## Naming Token System
+
+`NAMING_TOKENS` array drives both the chip list in the UI and serves as documentation. To add a new token:
+
+1. Add an entry to `NAMING_TOKENS` (token + desc).
+2. Add the replacement logic in `computeOutputName()`.
+3. Optionally add it to `TAG_TOKENS` in `renderMetaResults()` if it maps to an EXIF tag.
+  </script>
+
 </body>
 </html>

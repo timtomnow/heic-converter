@@ -105,11 +105,46 @@ function showConfirm(title, msg, onConfirm, confirmLabel = 'Confirm') {
 
 function hideModal() {
   document.getElementById('modal-overlay').classList.remove('open');
+  document.getElementById('modal').classList.remove('modal-wide');
 }
 
 document.addEventListener('click', e => {
   if (e.target.id === 'modal-overlay') hideModal();
 });
+
+function showHelpModal(tab = 'readme') {
+  const readmeMd = document.getElementById('doc-readme')?.textContent ?? 'Documentation not found.';
+  const claudeMd = document.getElementById('doc-claude')?.textContent ?? 'Documentation not found.';
+  const render = md => typeof marked !== 'undefined'
+    ? marked.parse(md)
+    : `<pre style="white-space:pre-wrap;font-size:12.5px;">${esc(md)}</pre>`;
+
+  document.getElementById('modal').innerHTML = `
+    <div class="modal-header">
+      <span class="modal-title">Help &amp; Documentation</span>
+      <button class="modal-close" onclick="hideModal()">×</button>
+    </div>
+    <div class="help-tabs">
+      <button class="help-tab-btn${tab === 'readme' ? ' active' : ''}" onclick="switchHelpTab('readme')">User Guide</button>
+      <button class="help-tab-btn${tab === 'claude' ? ' active' : ''}" onclick="switchHelpTab('claude')">Developer Guide</button>
+    </div>
+    <div class="help-content" id="help-readme"${tab !== 'readme' ? ' style="display:none"' : ''}>
+      ${render(readmeMd)}
+    </div>
+    <div class="help-content" id="help-claude"${tab !== 'claude' ? ' style="display:none"' : ''}>
+      ${render(claudeMd)}
+    </div>`;
+  document.getElementById('modal').classList.add('modal-wide');
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function switchHelpTab(tab) {
+  document.getElementById('help-readme').style.display = tab === 'readme' ? '' : 'none';
+  document.getElementById('help-claude').style.display = tab === 'claude' ? '' : 'none';
+  document.querySelectorAll('.help-tab-btn').forEach((btn, i) => {
+    btn.classList.toggle('active', (i === 0 && tab === 'readme') || (i === 1 && tab === 'claude'));
+  });
+}
 
 // ═══════════════════════════════════════════════════════════════
 // EXIF READING
@@ -1049,7 +1084,8 @@ function buildSidebar() {
 
   document.getElementById('sidebar').innerHTML = `
     <div class="sidebar-logo">
-      HEIC<span class="logo-dim"> Converter</span>
+      <span>HEIC<span class="logo-dim"> Converter</span></span>
+      <button class="help-btn" onclick="showHelpModal()" title="Help &amp; Documentation">?</button>
     </div>
     <nav class="sidebar-nav">
       ${nav.map(({ page, icon, label }) => `
